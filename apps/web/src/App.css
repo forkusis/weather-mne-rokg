@@ -1,0 +1,161 @@
+:root {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  line-height: 1.45;
+  color: #e8eef5;
+  background: #0f1419;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(ellipse at top, #1a2836 0%, #0f1419 55%);
+}
+
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin: 0.25rem 0 1.5rem;
+  color: #8b9cb3;
+  font-size: 0.9rem;
+}
+
+.status {
+  color: #8b9cb3;
+}
+
+.error {
+  background: #3b1515;
+  border: 1px solid #7f1d1d;
+  color: #fecaca;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+}
+
+.hero-card {
+  background: linear-gradient(145deg, #1e3a5f 0%, #152536 100%);
+  border: 1px solid #2a4a6a;
+  border-radius: 16px;
+  padding: 1.25rem 1.35rem 1.35rem;
+  margin-bottom: 1.75rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.hero-top h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.badge {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: #243b55;
+  color: #9ec5fe;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+}
+
+.hero-temp {
+  margin: 0.85rem 0 1rem;
+}
+
+.temp {
+  font-size: 3rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.temp .unit {
+  font-size: 1.25rem;
+  font-weight: 500;
+  margin-left: 0.15rem;
+  color: #9ec5fe;
+}
+
+.hero-meta {
+  display: grid;
+  gap: 0.55rem;
+  font-size: 0.92rem;
+}
+
+.hero-meta > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.45rem;
+}
+
+.label {
+  color: #8b9cb3;
+}
+
+.list-section h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  color: #b6c5d8;
+  font-weight: 600;
+}
+
+.station-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #243040;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #151c24;
+}
+
+.station-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid #1e2833;
+}
+
+.station-row:last-child {
+  border-bottom: none;
+}
+
+.station-row .name {
+  font-weight: 500;
+}
+
+.station-row .temp {
+  font-size: 1.1rem;
+}
+
+.muted {
+  color: #6b7c90;
+}
+
+.footnote {
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  color: #6b7c90;
+}
