@@ -1,7 +1,6 @@
 /**
  * GET /functions/v1/api-stations
- * Returns all active stations with latest observation (canonical JSON).
- * Public read via anon key (RLS allows SELECT).
+ * Active stations + latest observation (canonical JSON).
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
@@ -35,7 +34,7 @@ Deno.serve(async (req) => {
     const { data: observations, error: obsErr } = await supabase
       .from("current_observations")
       .select(
-        "station_id, measured_at, temperature_c, precipitation_mm, wind_speed_ms, wind_direction_code, wind_gust_ms, source_status",
+        "station_id, measured_at, temperature_c, humidity_pct, precipitation_mm, wind_speed_ms, wind_direction_code, wind_gust_ms, pressure_hpa, solar_radiation_wm2, source_status",
       );
 
     if (obsErr) throw new Error(obsErr.message);
@@ -61,10 +60,13 @@ Deno.serve(async (req) => {
             ? {
               measuredAt: o.measured_at,
               temperatureC: o.temperature_c,
+              humidityPct: o.humidity_pct,
               precipitationMm: o.precipitation_mm,
               windSpeedMs: o.wind_speed_ms,
               windDirectionCode: o.wind_direction_code,
               windGustMs: o.wind_gust_ms,
+              pressureHpa: o.pressure_hpa,
+              solarRadiationWm2: o.solar_radiation_wm2,
               sourceStatus: o.source_status,
             }
             : null,
