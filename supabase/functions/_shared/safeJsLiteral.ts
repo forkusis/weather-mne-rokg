@@ -1,7 +1,6 @@
 /**
- * Parse a JSON-like JavaScript literal (array/object) without eval / new Function.
- * Supports: objects, arrays, numbers, double-quoted strings, true, false, null.
- * Enough for ZHMS posljednje / stanice extracts.
+ * Parse JSON-like JS literal without eval.
+ * Supports trailing commas (ZHMS uses `,]` / `,}`).
  */
 
 export function parseJsLiteral(input: string): unknown {
@@ -9,7 +8,7 @@ export function parseJsLiteral(input: string): unknown {
   let i = 0;
 
   function skipWs() {
-    while (i < s.length && /[\s,]/.test(s[i]!)) i++;
+    while (i < s.length && /\s/.test(s[i]!)) i++;
   }
 
   function parseValue(): unknown {
@@ -45,6 +44,11 @@ export function parseJsLiteral(input: string): unknown {
     }
     while (i < s.length) {
       skipWs();
+      // trailing comma before }
+      if (s[i] === "}") {
+        i++;
+        break;
+      }
       if (s[i] !== "\"") throw new Error("Object key must be string");
       const key = parseString();
       skipWs();
@@ -53,13 +57,13 @@ export function parseJsLiteral(input: string): unknown {
       const val = parseValue();
       obj[key] = val;
       skipWs();
-      if (s[i] === "}") {
-        i++;
-        break;
-      }
       if (s[i] === ",") {
         i++;
         continue;
+      }
+      if (s[i] === "}") {
+        i++;
+        break;
       }
       throw new Error("Expected , or }");
     }
@@ -75,15 +79,21 @@ export function parseJsLiteral(input: string): unknown {
       return arr;
     }
     while (i < s.length) {
-      arr.push(parseValue());
       skipWs();
+      // trailing comma before ]
       if (s[i] === "]") {
         i++;
         break;
       }
+      arr.push(parseValue());
+      skipWs();
       if (s[i] === ",") {
         i++;
         continue;
+      }
+      if (s[i] === "]") {
+        i++;
+        break;
       }
       throw new Error("Expected , or ]");
     }
