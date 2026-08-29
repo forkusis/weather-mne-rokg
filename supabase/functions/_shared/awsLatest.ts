@@ -2,21 +2,18 @@
  * AwsLatestAdapter
  * Source: https://www.meteo.co.me/Meteorologija/aws_m.php
  *
- * Live structure (verified 2026-08-28):
- *   posljednje = { "glavna": [[id,type,name,datetime,temp,rr,ws,wdir,gust], ...], ... }
- *   stanice    = [[id, wmo, lat, lon, elev, name, type, active], ...]
- *
- * TLS: ZHMS uses Let's Encrypt YE1 intermediate; Deno Edge CA store may not
- * include Root YE yet — we pass explicit caCerts.
+ * TLS: YE1 chain via caCerts. Timezone: Europe/Podgorica (Luxon).
+ * Parse: safe JS literal (no eval / new Function).
  */
 
+import { DateTime } from "https://esm.sh/luxon@3.4.4";
 import type {
   AdapterResult,
   NormalizedObservation,
   NormalizedStation,
 } from "./types.ts";
-
 import { CA_CERTS } from "./caCerts.ts";
+import { parseJsLiteral } from "./safeJsLiteral.ts";
 
 const DEFAULT_URL = "https://www.meteo.co.me/Meteorologija/aws_m.php";
 
@@ -24,24 +21,13 @@ function getHttpClient(): Deno.HttpClient {
   return Deno.createHttpClient({ caCerts: CA_CERTS });
 }
 
-/** Parse "DD.MM.YYYY HH:mm" as Europe/Podgorica local → UTC ISO string. */
+/** "DD.MM.YYYY HH:mm" as Europe/Podgorica → UTC ISO. */
 export function parseLocalMeasuredAt(local: string): string | null {
-  const m = local.trim().match(
-    /^(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})$/,
-  );
-  if (!m) return null;
-  const [, dd, mm, yyyy, hh, min] = m;
-  const month = Number(mm);
-  const offsetHours = month >= 4 && month <= 10 ? 2 : 1; // CEST vs CET
-  const utcMs = Date.UTC(
-    Number(yyyy),
-    month - 1,
-    Number(dd),
-    Number(hh) - offsetHours,
-    Number(min),
-  );
-  if (Number.isNaN(utcMs)) return null;
-  return new Date(utcMs).toISOString();
+  const dt = DateTime.fromFormat(local.trim(), "dd.MM.yyyy HH:mm", {
+    zone: "Europe/Podgorica",
+  });
+  if (!dt.isValid) return null;
+  return dt.toUTC().toISO();
 }
 
 function emptyToNullNumber(v: unknown): number | null {
@@ -135,11 +121,11 @@ export async function fetchAndParseAwsLatest(
     throw new Error("Could not find posljednje or stanice in ZHMS HTML");
   }
 
-  const posljednje = new Function(`return (${posljednjeRaw})`)() as Record<
+  const posljednje = parseJsLiteral(posljednjeRaw) as Record<
     string,
     unknown[][]
   >;
-  const stanice = new Function(`return (${staniceRaw})`)() as unknown[][];
+  const stanice = parseJsLiteral(staniceRaw) as unknown[];
 
   if (!stanice || !Array.isArray(stanice) || stanice.length < 5) {
     throw new Error(`Too few stations in stanice[]: ${stanice?.length ?? 0}`);
