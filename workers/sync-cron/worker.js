@@ -1,42 +1,66 @@
 /**
- * Cloudflare Worker + Cron Trigger
- * Every 3 minutes: POST Supabase Edge Function sync-aws-current
+ * Cloudflare Worker + Cron
+ * 1) Every 3 min: POST sync-aws-current (table snapshot)
+ * 2) Same run: POST sync-aws-graph-batch (up to 4 due stations)
  *
- * Secrets (Workers → Settings → Variables):
- *   SYNC_URL     = https://vssqnwomevifyqlyqpsb.supabase.co/functions/v1/sync-aws-current
- *   SYNC_BEARER  = Supabase anon or service_role JWT (eyJ...)
- *   CRON_SECRET  = optional, same as Supabase secret CRON_SECRET
+ * Secrets:
+ *   SYNC_URL          = .../functions/v1/sync-aws-current
+ *   GRAPH_BATCH_URL   = .../functions/v1/sync-aws-graph-batch
+ *   SYNC_BEARER       = anon or service_role JWT
+ *   CRON_SECRET       = optional
  */
 
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(runSync(env));
+    ctx.waitUntil(runAll(env));
   },
 
   async fetch(request, env) {
-    // Manual test in browser / curl
-    const result = await runSync(env);
+    const result = await runAll(env);
     return new Response(JSON.stringify(result, null, 2), {
       headers: { "Content-Type": "application/json" },
     });
   },
 };
 
-async function runSync(env) {
-  const url = env.SYNC_URL;
+async function runAll(env) {
   const bearer = env.SYNC_BEARER;
-  if (!url || !bearer) {
-    return { ok: false, error: "Missing SYNC_URL or SYNC_BEARER secret" };
+  if (!bearer) {
+    return { ok: false, error: "Missing SYNC_BEARER" };
   }
 
   const headers = {
     Authorization: `Bearer ${bearer}`,
     "Content-Type": "application/json",
   };
-  if (env.CRON_SECRET) {
-    headers["x-cron-secret"] = env.CRON_SECRET;
+  if (env.CRON_SECRET) headers["x-cron-secret"] = env.CRON_SECRET;
+
+  const out = { ok: true, aws: null, graph: null };
+
+  const awsUrl = env.SYNC_URL;
+  if (awsUrl) {
+    out.aws = await postJson(awsUrl, headers);
+  } else {
+    out.aws = { ok: false, error: "Missing SYNC_URL" };
   }
 
+  const graphUrl =
+    env.GRAPH_BATCH_URL ||
+    (awsUrl
+      ? awsUrl.replace(/sync-aws-current\/?$/, "sync-aws-graph-batch")
+      : null);
+
+  if (graphUrl) {
+    out.graph = await postJson(graphUrl, headers);
+  } else {
+    out.graph = { ok: false, error: "Missing GRAPH_BATCH_URL" };
+  }
+
+  out.ok = !!(out.aws && out.aws.ok && out.graph && out.graph.ok);
+  return out;
+}
+
+async function postJson(url, headers) {
   try {
     const res = await fetch(url, { method: "POST", headers });
     const text = await res.text();
